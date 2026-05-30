@@ -2,8 +2,9 @@ import streamlit as st
 import pandas as pd
 import numpy as np
 import joblib
-
 import os
+
+st.set_page_config(page_title="Customer Churn Predictor", page_icon="📊", layout="wide")
 
 # Load the trained model
 @st.cache_resource
@@ -93,8 +94,6 @@ def preprocess_input(data):
         
     # Convert to DataFrame with single row
     return pd.DataFrame([processed], columns=EXPECTED_COLUMNS)
-
-st.set_page_config(page_title="Customer Churn Predictor", page_icon="📊", layout="wide")
 
 st.title("📊 Customer Churn Prediction")
 st.markdown("Enter customer details below to predict if they are likely to churn.")
