@@ -1,3 +1,13 @@
+---
+title: Customer Churn Prediction
+emoji: 📊
+colorFrom: blue
+colorTo: purple
+sdk: streamlit
+sdk_version: 1.32.0
+app_file: app/app.py
+pinned: false
+---
 # Customer Churn Prediction Project
 
 This project is an end-to-end Machine Learning solution designed to predict customer churn based on their demographic information, account information, and service usage. It includes data exploration, preprocessing, model training, and a Streamlit web application for real-time predictions.
