@@ -3,10 +3,14 @@ import pandas as pd
 import numpy as np
 import joblib
 
+import os
+
 # Load the trained model
 @st.cache_resource
 def load_model():
-    return joblib.load("models/churn_model.pkl")
+    base_dir = os.path.dirname(os.path.dirname(__file__))
+    model_path = os.path.join(base_dir, "models", "churn_model.pkl")
+    return joblib.load(model_path)
 
 model = load_model()
 

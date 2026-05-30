@@ -5,19 +5,34 @@ This project is an end-to-end Machine Learning solution designed to predict cust
 ## Project Structure
 
 ```
-.
-├── app.py                     # Streamlit web application
+Customer-Churn-Prediction/
+│
 ├── data/
-│   ├── raw/                   # Raw data files
-│   └── processed/             # Cleaned and processed data files
-├── models/
-│   └── churn_model.pkl        # Trained Logistic Regression model
+│   ├── raw/
+│   └── processed/
+│
 ├── notebooks/
-│   ├── 01_eda.ipynb           # Exploratory Data Analysis
-│   ├── 02_preprocessing.ipynb # Data Preprocessing
-│   └── 03_model_training.ipynb# Model Training and Evaluation
-├── requirements.txt           # Project dependencies
-└── README.md                  # Project documentation
+│   ├── 01_EDA.ipynb
+│   ├── 02_Feature_Engineering.ipynb
+│   └── 03_Model_Training.ipynb
+│
+├── src/
+│   ├── preprocess.py
+│   ├── train.py
+│   ├── predict.py
+│   └── utils.py
+│
+├── models/
+│   └── churn_model.pkl
+│
+├── app/
+│   ├── app.py
+│   ├── templates/
+│   └── static/
+│
+├── Dockerfile
+├── requirements.txt
+└── README.md
 ```
 
 ## Setup and Installation
@@ -44,7 +59,7 @@ This project is an end-to-end Machine Learning solution designed to predict cust
 To start the Streamlit web application locally, run the following command from the root of the project:
 
 ```bash
-streamlit run app.py
+streamlit run app/app.py
 ```
 
 The app will open automatically in your browser at `http://localhost:8501`. 
