@@ -6,7 +6,7 @@ import os
 
 st.set_page_config(page_title="Customer Churn Predictor", page_icon="📊", layout="wide")
 
-# Load the trained model
+# Load the trained model pipeline
 @st.cache_resource
 def load_model():
     base_dir = os.path.dirname(os.path.dirname(__file__))
@@ -14,86 +14,6 @@ def load_model():
     return joblib.load(model_path)
 
 model = load_model()
-
-# Constants for scaling (computed from the training dataset)
-MEANS = {
-    'tenure': 32.371149,
-    'MonthlyCharges': 64.761692,
-    'TotalCharges': 2281.916928
-}
-STDS = {
-    'tenure': 24.557737,
-    'MonthlyCharges': 30.087911,
-    'TotalCharges': 2265.109576
-}
-
-# The exact columns expected by the model in the correct order
-EXPECTED_COLUMNS = [
-    'gender', 'SeniorCitizen', 'Partner', 'Dependents', 'tenure', 'PhoneService',
-    'PaperlessBilling', 'MonthlyCharges', 'TotalCharges',
-    'MultipleLines_No phone service', 'MultipleLines_Yes',
-    'InternetService_Fiber optic', 'InternetService_No',
-    'OnlineSecurity_No internet service', 'OnlineSecurity_Yes',
-    'OnlineBackup_No internet service', 'OnlineBackup_Yes',
-    'DeviceProtection_No internet service', 'DeviceProtection_Yes',
-    'TechSupport_No internet service', 'TechSupport_Yes',
-    'StreamingTV_No internet service', 'StreamingTV_Yes',
-    'StreamingMovies_No internet service', 'StreamingMovies_Yes',
-    'Contract_One year', 'Contract_Two year',
-    'PaymentMethod_Credit card (automatic)', 'PaymentMethod_Electronic check',
-    'PaymentMethod_Mailed check'
-]
-
-def preprocess_input(data):
-    # Initialize a dictionary with all expected columns set to 0
-    processed = {col: 0 for col in EXPECTED_COLUMNS}
-    
-    # 1. Label Encoded Variables
-    processed['gender'] = 1 if data['gender'] == 'Male' else 0
-    processed['Partner'] = 1 if data['Partner'] == 'Yes' else 0
-    processed['Dependents'] = 1 if data['Dependents'] == 'Yes' else 0
-    processed['PhoneService'] = 1 if data['PhoneService'] == 'Yes' else 0
-    processed['PaperlessBilling'] = 1 if data['PaperlessBilling'] == 'Yes' else 0
-    processed['SeniorCitizen'] = data['SeniorCitizen']
-    
-    # 2. Scaled Variables
-    processed['tenure'] = (data['tenure'] - MEANS['tenure']) / STDS['tenure']
-    processed['MonthlyCharges'] = (data['MonthlyCharges'] - MEANS['MonthlyCharges']) / STDS['MonthlyCharges']
-    processed['TotalCharges'] = (data['TotalCharges'] - MEANS['TotalCharges']) / STDS['TotalCharges']
-    
-    # 3. One-Hot Encoded Variables
-    if f"MultipleLines_{data['MultipleLines']}" in processed:
-        processed[f"MultipleLines_{data['MultipleLines']}"] = 1
-        
-    if f"InternetService_{data['InternetService']}" in processed:
-        processed[f"InternetService_{data['InternetService']}"] = 1
-        
-    if f"OnlineSecurity_{data['OnlineSecurity']}" in processed:
-        processed[f"OnlineSecurity_{data['OnlineSecurity']}"] = 1
-        
-    if f"OnlineBackup_{data['OnlineBackup']}" in processed:
-        processed[f"OnlineBackup_{data['OnlineBackup']}"] = 1
-        
-    if f"DeviceProtection_{data['DeviceProtection']}" in processed:
-        processed[f"DeviceProtection_{data['DeviceProtection']}"] = 1
-        
-    if f"TechSupport_{data['TechSupport']}" in processed:
-        processed[f"TechSupport_{data['TechSupport']}"] = 1
-        
-    if f"StreamingTV_{data['StreamingTV']}" in processed:
-        processed[f"StreamingTV_{data['StreamingTV']}"] = 1
-        
-    if f"StreamingMovies_{data['StreamingMovies']}" in processed:
-        processed[f"StreamingMovies_{data['StreamingMovies']}"] = 1
-        
-    if f"Contract_{data['Contract']}" in processed:
-        processed[f"Contract_{data['Contract']}"] = 1
-        
-    if f"PaymentMethod_{data['PaymentMethod']}" in processed:
-        processed[f"PaymentMethod_{data['PaymentMethod']}"] = 1
-        
-    # Convert to DataFrame with single row
-    return pd.DataFrame([processed], columns=EXPECTED_COLUMNS)
 
 st.title("📊 Customer Churn Prediction")
 st.markdown("Enter customer details below to predict if they are likely to churn.")
@@ -146,6 +66,7 @@ with st.form("prediction_form"):
     submitted = st.form_submit_button("Predict Churn")
 
 if submitted:
+    # Build raw input dictionary representing the customer profile
     input_data = {
         'gender': gender,
         'SeniorCitizen': senior_citizen,
@@ -168,12 +89,12 @@ if submitted:
         'TotalCharges': total_charges
     }
     
-    # Preprocess
-    df_processed = preprocess_input(input_data)
+    # Convert input to DataFrame (retains original format and column names)
+    df_input = pd.DataFrame([input_data])
     
-    # Predict
-    prediction = model.predict(df_processed)[0]
-    probability = model.predict_proba(df_processed)[0][1]
+    # Predict directly using the loaded pipeline (avoids manual scaling and preprocessing leakage)
+    prediction = model.predict(df_input)[0]
+    probability = model.predict_proba(df_input)[0][1]
     
     st.markdown("---")
     if prediction == 1:

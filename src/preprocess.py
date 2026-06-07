@@ -1,40 +1,59 @@
 import pandas as pd
-from sklearn.preprocessing import LabelEncoder, StandardScaler
+from sklearn.compose import ColumnTransformer
+from sklearn.pipeline import Pipeline
+from sklearn.impute import SimpleImputer
+from sklearn.preprocessing import StandardScaler, OneHotEncoder, OrdinalEncoder
 
-def preprocess_data(df, is_training=True):
+def clean_raw_data(df):
     """
-    Preprocess the raw dataframe.
+    Perform basic data cleaning: drop customerID, convert TotalCharges to numeric,
+    and convert Churn to binary if present.
+    Does not perform scaling, imputation, or dummy encoding (to avoid data leakage).
     """
+    df = df.copy()
     if 'customerID' in df.columns:
         df = df.drop("customerID", axis=1)
         
-    df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce")
-    df["TotalCharges"] = df["TotalCharges"].fillna(df["TotalCharges"].median())
-    
+    if 'TotalCharges' in df.columns:
+        df["TotalCharges"] = pd.to_numeric(df["TotalCharges"], errors="coerce")
+        
     if "Churn" in df.columns:
         df["Churn"] = df["Churn"].map({"Yes": 1, "No": 0})
         
-    cat_cols = df.select_dtypes(include="object").columns
-    le = LabelEncoder()
-    
-    for col in cat_cols:
-        if df[col].nunique() == 2:
-            df[col] = le.fit_transform(df[col])
-            
-    scaler = StandardScaler()
-    num_cols = ['tenure', 'MonthlyCharges', 'TotalCharges']
-    df[num_cols] = scaler.fit_transform(df[num_cols])
-    
-    cat_cols_dummies = [
+    return df
+
+def get_preprocessor():
+    """
+    Constructs and returns the scikit-learn ColumnTransformer for preprocessing.
+    """
+    num_cols = ["tenure", "MonthlyCharges", "TotalCharges"]
+    bin_cols = ["gender", "Partner", "Dependents", "PhoneService", "PaperlessBilling"]
+    multi_cols = [
         'MultipleLines', 'InternetService', 'OnlineSecurity', 'OnlineBackup',
         'DeviceProtection', 'TechSupport', 'StreamingTV', 'StreamingMovies',
         'Contract', 'PaymentMethod'
     ]
-    
-    # Filter out columns that don't exist in the df (useful during inference)
-    cat_cols_dummies = [c for c in cat_cols_dummies if c in df.columns]
-    
-    if cat_cols_dummies:
-        df = pd.get_dummies(df, columns=cat_cols_dummies, drop_first=True, dtype=int)
-        
-    return df
+    pass_cols = ["SeniorCitizen"]
+
+    num_transformer = Pipeline(steps=[
+        ('imputer', SimpleImputer(strategy='median')),
+        ('scaler', StandardScaler())
+    ])
+
+    bin_transformer = Pipeline(steps=[
+        ('encoder', OrdinalEncoder(handle_unknown='use_encoded_value', unknown_value=-1))
+    ])
+
+    multi_transformer = Pipeline(steps=[
+        ('encoder', OneHotEncoder(drop='first', sparse_output=False, handle_unknown='ignore'))
+    ])
+
+    preprocessor = ColumnTransformer(
+        transformers=[
+            ('num', num_transformer, num_cols),
+            ('bin', bin_transformer, bin_cols),
+            ('multi', multi_transformer, multi_cols),
+            ('pass', 'passthrough', pass_cols)
+        ]
+    )
+    return preprocessor
